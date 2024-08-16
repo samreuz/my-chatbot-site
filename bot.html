@@ -123,32 +123,15 @@
                 },
                 body: JSON.stringify({ message: userInput })
             })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`Ошибка HTTP: ${response.status}`);
-                }
-                return response.json();
-            })
+            .then(response => response.json())
             .then(data => {
-                console.log('Ответ от n8n:', data);  // Выводим данные в консоль для проверки
-                if (Array.isArray(data) && data.length > 0) {
-                    const botMessage = document.createElement('div');
-                    botMessage.textContent = data[0].response;  // Извлекаем ответ из первого элемента массива
-                    botMessage.className = 'message bot-message';
-                    chatContent.appendChild(botMessage);
-                } else {
-                    const errorMessage = document.createElement('div');
-                    errorMessage.textContent = 'Ошибка: неверный формат ответа';
-                    errorMessage.className = 'message bot-message';
-                    chatContent.appendChild(errorMessage);
-                    console.error('Неверный формат ответа:', data);
-                }
+                // Отображаем ответ в чате
+                const botMessage = document.createElement('div');
+                botMessage.textContent = data.response;
+                botMessage.className = 'message bot-message';
+                chatContent.appendChild(botMessage);
             })
             .catch(error => {
-                const errorMessage = document.createElement('div');
-                errorMessage.textContent = 'Ошибка связи с сервером';
-                errorMessage.className = 'message bot-message';
-                chatContent.appendChild(errorMessage);
                 console.error('Ошибка:', error);
             });
 
