@@ -116,24 +116,40 @@
             chatContent.appendChild(userMessage);
 
             // Отправляем сообщение в n8n через вебхук
-            fetch('https://n8n.autodom.keenetic.pro/webhook/14ed986e-af8b-4933-9bcf-bfb7524b12f0', {
+            fetch('https://n8n.autodom.keenetic.pro/webhook-test/14ed986e-af8b-4933-9bcf-bfb7524b12f0', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({ message: userInput })
             })
-            .then(response => response.json())
+            .then(response => {
+                console.log('HTTP статус:', response.status);
+                return response.json();
+            })
             .then(data => {
-                // Отображаем ответ в чате
-                const botMessage = document.createElement('div');
-                botMessage.textContent = data.response;
-                botMessage.className = 'message bot-message';
-                chatContent.appendChild(botMessage);
+                console.log('Ответ от n8n:', data);  // Выводим данные в консоль для проверки
+                if (Array.isArray(data) && data.length > 0) {
+                    const botMessage = document.createElement('div');
+                    botMessage.textContent = data[0].response;  // Извлекаем ответ из первого элемента массива
+                    botMessage.className = 'message bot-message';
+                    chatContent.appendChild(botMessage);
+                } else {
+                    const errorMessage = document.createElement('div');
+                    errorMessage.textContent = 'Ошибка: неверный формат ответа';
+                    errorMessage.className = 'message bot-message';
+                    chatContent.appendChild(errorMessage);
+                    console.error('Неверный формат ответа:', data);
+                }
             })
             .catch(error => {
+                const errorMessage = document.createElement('div');
+                errorMessage.textContent = 'Ошибка связи с сервером';
+                errorMessage.className = 'message bot-message';
+                chatContent.appendChild(errorMessage);
                 console.error('Ошибка:', error);
             });
+
 
             // Очищаем поле ввода
             document.getElementById('userInput').value = '';
