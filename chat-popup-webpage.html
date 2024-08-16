@@ -96,10 +96,15 @@
                 messageInput.value = '';
                 try {
                     const response = await axios.post('https://n8n.autodom.keenetic.pro/webhook/14ed986e-af8b-4933-9bcf-bfb7524b12f0', { message });
-                    addMessage('Бот', response.data.response);
+                    console.log('Полученный ответ:', response.data); // Отладочный вывод
+                    if (response.data && response.data.response) {
+                        addMessage('Бот', response.data.response);
+                    } else {
+                        addMessage('Бот', 'Извините, не удалось получить корректный ответ от сервера.');
+                    }
                 } catch (error) {
                     console.error('Ошибка при отправке сообщения:', error);
-                    addMessage('Бот', 'Извините, произошла ошибка. Попробуйте еще раз позже.');
+                    addMessage('Бот', 'Извините, произошла ошибка при отправке сообщения. Попробуйте еще раз позже.');
                 }
             }
         }
