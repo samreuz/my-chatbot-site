@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Всплывающий помощник</title>
+    <style>
+        .chatbot-window {
+            display: none;
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 300px;
+            background-color: white;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            font-family: Arial, sans-serif;
+        }
+
+        .chatbot-header {
+            background-color: #007bff;
+            color: white;
+            padding: 10px;
+            border-top-left-radius: 10px;
+            border-top-right-radius: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .chatbot-body {
+            height: 300px;
+            overflow-y: scroll;
+            padding: 10px;
+        }
+
+        .chatbot-footer {
+            display: flex;
+            padding: 10px;
+            border-top: 1px solid #ccc;
+        }
+
+        #userInput {
+            flex: 1;
+            padding: 5px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        #openChatbot {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-family: Arial, sans-serif;
+        }
+
+        .message {
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 5px;
+        }
+
+        .user-message {
+            background-color: #f1f1f1;
+            text-align: right;
+        }
+
+        .bot-message {
+            background-color: #007bff;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="chatbot" class="chatbot-window">
+        <div class="chatbot-header">
+            <h4>Помощник</h4>
+            <button onclick="closeChatbot()">X</button>
+        </div>
+        <div class="chatbot-body" id="chat-content"></div>
+        <div class="chatbot-footer">
+            <input type="text" id="userInput" placeholder="Введите сообщение...">
+            <button onclick="sendMessage()">Отправить</button>
+        </div>
+    </div>
+
+    <button id="openChatbot" onclick="openChatbot()">Открыть помощника</button>
+
+    <script>
+        function openChatbot() {
+            document.getElementById('chatbot').style.display = 'block';
+            document.getElementById('openChatbot').style.display = 'none';
+        }
+
+        function closeChatbot() {
+            document.getElementById('chatbot').style.display = 'none';
+            document.getElementById('openChatbot').style.display = 'block';
+        }
+
+        function sendMessage() {
+            const userInput = document.getElementById('userInput').value;
+            const chatContent = document.getElementById('chat-content');
+
+            // Добавляем сообщение пользователя в чат
+            const userMessage = document.createElement('div');
+            userMessage.textContent = userInput;
+            userMessage.className = 'message user-message';
+            chatContent.appendChild(userMessage);
+
+            // Отправляем сообщение в n8n через вебхук
+            fetch('https://n8n.autodom.keenetic.pro/webhook-test/14ed986e-af8b-4933-9bcf-bfb7524b12f0', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ message: userInput })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`Ошибка HTTP: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Ответ от n8n:', data);  // Выводим данные в консоль для проверки
+                if (Array.isArray(data) && data.length > 0) {
+                    const botMessage = document.createElement('div');
+                    botMessage.textContent = data[0].response;  // Извлекаем ответ из первого элемента массива
+                    botMessage.className = 'message bot-message';
+                    chatContent.appendChild(botMessage);
+                } else {
+                    const errorMessage = document.createElement('div');
+                    errorMessage.textContent = 'Ошибка: неверный формат ответа';
+                    errorMessage.className = 'message bot-message';
+                    chatContent.appendChild(errorMessage);
+                    console.error('Неверный формат ответа:', data);
+                }
+            })
+            .catch(error => {
+                const errorMessage = document.createElement('div');
+                errorMessage.textContent = 'Ошибка связи с сервером';
+                errorMessage.className = 'message bot-message';
+                chatContent.appendChild(errorMessage);
+                console.error('Ошибка:', error);
+            });
+
+            // Очищаем поле ввода
+            document.getElementById('userInput').value = '';
+        }
+    </script>
+
+</body>
+</html>
