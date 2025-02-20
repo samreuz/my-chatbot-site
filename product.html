@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Список магазинов</title>
+    <title>Список продуктов</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         body {
@@ -26,7 +26,7 @@
         .input-group {
             margin-bottom: 20px;
         }
-        .store-input {
+        .product-input {
             width: calc(100% - 20px);
             padding: 10px;
             border: 1px solid var(--tg-theme-hint-color, #999);
@@ -45,11 +45,11 @@
             cursor: pointer;
             font-size: 16px;
         }
-        .store-list {
+        .product-list {
             list-style: none;
             padding: 0;
         }
-        .store-item {
+        .product-item {
             background: var(--tg-theme-secondary-bg-color, #f5f5f5);
             padding: 15px;
             margin-bottom: 10px;
@@ -75,13 +75,13 @@
 </head>
 <body>
     <div class="container">
-        <div class="header">Список товара</div>
+        <div class="header">Список продуктов</div>
         <div class="input-group">
-            <input type="text" class="store-input" id="storeInput" placeholder="Название товара">
-            <button class="add-button" onclick="addStore()">Добавить товар</button>
+            <input type="text" class="product-input" id="productInput" placeholder="Название продукта">
+            <button class="add-button" onclick="addProduct()">Добавить продукт</button>
         </div>
-        <ul class="store-list" id="storeList">
-            <!-- Магазины будут добавляться сюда -->
+        <ul class="product-list" id="productList">
+            <!-- Продукты будут добавляться сюда -->
         </ul>
         <div class="success-message" id="successMessage">Добавлено!</div>
     </div>
@@ -90,8 +90,8 @@
         let tg = window.Telegram.WebApp;
         tg.expand();
 
-        let stores = [];
-        const N8N_WEBHOOK_URL = 'https://n8n.autodom.uz/webhook/product'; // Замените на URL вашего webhook в n8n
+        let products = [];
+        const N8N_WEBHOOK_URL = 'https://n8n.autodom.uz/webhook/products'; // Замените на URL вашего webhook в n8n
 
         async function sendToN8n(data) {
             try {
@@ -101,7 +101,7 @@
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
-                        store: data, // Отправляем только один объект
+                        product: data, // Отправляем только один объект
                         userId: tg.initDataUnsafe.user.id,
                         username: tg.initDataUnsafe.user.username
                     })
@@ -112,20 +112,20 @@
             }
         }
 
-        async function addStore() {
-            const input = document.getElementById('storeInput');
-            const storeName = input.value.trim();
+        async function addProduct() {
+            const input = document.getElementById('productInput');
+            const productName = input.value.trim();
 
-            if (storeName) {
-                stores.push(storeName);
-                renderStores();
+            if (productName) {
+                products.push(productName);
+                renderProducts();
                 input.value = '';
 
                 // Отправляем только что добавленный объект в n8n
-                await sendToN8n(storeName);
+                await sendToN8n(productName);
 
                 // Также отправляем в Telegram
-                tg.sendData(JSON.stringify({ store: storeName }));
+                tg.sendData(JSON.stringify({ product: productName }));
 
                 // Показываем сообщение об успешном добавлении
                 const successMessage = document.getElementById('successMessage');
@@ -136,30 +136,30 @@
             }
         }
 
-        function renderStores() {
-            const storeList = document.getElementById('storeList');
-            storeList.innerHTML = '';
+        function renderProducts() {
+            const productList = document.getElementById('productList');
+            productList.innerHTML = '';
 
-            stores.forEach((store, index) => {
+            products.forEach((product, index) => {
                 const li = document.createElement('li');
-                li.className = 'store-item';
+                li.className = 'product-item';
                 li.innerHTML = `
-                    <span>${store}</span>
-                    <button class="delete-btn" onclick="deleteStore(${index})">Удалить</button>
+                    <span>${product}</span>
+                    <button class="delete-btn" onclick="deleteProduct(${index})">Удалить</button>
                 `;
-                storeList.appendChild(li);
+                productList.appendChild(li);
             });
         }
 
         // Инициализация Telegram WebApp
         tg.ready();
 
-        // Загружаем существующие магазины при старте
-        fetch(N8N_WEBHOOK_URL + '/stores')
+        // Загружаем существующие продукты при старте
+        fetch(N8N_WEBHOOK_URL + '/products')
             .then(response => response.json())
             .then(data => {
-                stores = data.stores || [];
-                renderStores();
+                products = data.products || [];
+                renderProducts();
             })
             .catch(console.error);
     </script>
