@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Выбор товаров</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        body {
+            background-color: var(--tg-theme-bg-color, #fff);
+            color: var(--tg-theme-text-color, #000);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            margin: 0;
+            padding: 16px;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .header {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            color: var(--tg-theme-text-color, #000);
+        }
+        .store-select {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 20px;
+            border: 1px solid var(--tg-theme-hint-color, #999);
+            border-radius: 8px;
+            background: var(--tg-theme-bg-color, #fff);
+            color: var(--tg-theme-text-color, #000);
+            font-size: 16px;
+        }
+        .products-list {
+            list-style: none;
+            padding: 0;
+        }
+        .product-item {
+            background: var(--tg-theme-secondary-bg-color, #f5f5f5);
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .product-name {
+            flex-grow: 1;
+            margin-right: 15px;
+        }
+        .quantity-input {
+            width: 80px;
+            padding: 8px;
+            border: 1px solid var(--tg-theme-hint-color, #999);
+            border-radius: 4px;
+            text-align: center;
+        }
+        .submit-button {
+            width: 100%;
+            padding: 12px;
+            background-color: var(--tg-theme-button-color, #2481cc);
+            color: var(--tg-theme-button-text-color, #fff);
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">Выбор товаров</div>
+        
+        <select id="storeSelect" class="store-select">
+            <option value="">Выберите магазин</option>
+        </select>
+
+        <ul id="productsList" class="products-list">
+            <!-- Товары будут добавляться сюда -->
+        </ul>
+
+        <button class="submit-button" onclick="submitOrder()">Отправить заказ</button>
+    </div>
+
+    <script>
+        let tg = window.Telegram.WebApp;
+        tg.expand();
+
+        const N8N_API_URL = 'https://n8n.autodom.uz/webhook'; // URL вашего webhook в n8n
+        let stores = [];
+        let products = [];
+
+        // Загрузка магазинов и всех товаров
+        async function loadData() {
+            try {
+                // Загружаем магазины
+                const storesResponse = await fetch(`${N8N_API_URL}/stores`);
+                stores = await storesResponse.json();
+                
+                const storeSelect = document.getElementById('storeSelect');
+                stores.forEach(store => {
+                    const option = document.createElement('option');
+                    option.value = store.id;
+                    option.textContent = store.name;
+                    storeSelect.appendChild(option);
+                });
+
+                // Загружаем все товары
+                const productsResponse = await fetch(`${N8N_API_URL}/products`);
+                products = await productsResponse.json();
+                renderProducts();
+            } catch (error) {
+                console.error('Error loading data:', error);
+            }
+        }
+
+        // Отображение списка всех товаров
+        function renderProducts() {
+            const productsList = document.getElementById('productsList');
+            productsList.innerHTML = '';
+            
+            products.forEach(product => {
+                const li = document.createElement('li');
+                li.className = 'product-item';
+                li.innerHTML = `
+                    <span class="product-name">${product.name}</span>
+                    <input type="number" 
+                           class="quantity-input" 
+                           value="0" 
+                           min="0"
+                           data-product-id="${product.id}"
+                           onchange="validateQuantity(this)">
+                `;
+                productsList.appendChild(li);
+            });
+        }
+
+        // Проверка введенного количества
+        function validateQuantity(input) {
+            const value = parseInt(input.value);
+            if (value < 0) input.value = 0;
+        }
+
+        // Отправка заказа
+        async function submitOrder() {
+            const storeId = document.getElementById('storeSelect').value;
+            if (!storeId) {
+                alert('Пожалуйста, выберите магазин');
+                return;
+            }
+
+            const order = {
+                storeId: storeId,
+                products: []
+            };
+
+            // Собираем данные о количестве товаров
+            document.querySelectorAll('.quantity-input').forEach(input => {
+                const quantity = parseInt(input.value);
+                if (quantity > 0) {
+                    order.products.push({
+                        productId: input.dataset.productId,
+                        quantity: quantity
+                    });
+                }
+            });
+
+            if (order.products.length === 0) {
+                alert('Пожалуйста, выберите хотя бы один товар');
+                return;
+            }
+
+            try {
+                // Отправляем данные в n8n
+                await fetch(`${N8N_API_URL}/order`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(order)
+                });
+
+                // Отправляем данные в Telegram
+                tg.sendData(JSON.stringify(order));
+                
+                // Закрываем WebApp
+                tg.close();
+            } catch (error) {
+                console.error('Error submitting order:', error);
+                alert('Произошла ошибка при отправке заказа');
+            }
+        }
+
+        // Инициализация при загрузке страницы
+        tg.ready();
+        loadData();
+    </script>
+</body>
+</html>
