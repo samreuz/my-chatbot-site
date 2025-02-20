@@ -54,16 +54,6 @@
             padding: 15px;
             margin-bottom: 10px;
             border-radius: 8px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .delete-btn {
-            color: #ff3b30;
-            background: none;
-            border: none;
-            padding: 5px 10px;
-            cursor: pointer;
         }
         .success-message {
             color: green;
@@ -156,13 +146,10 @@
             const productList = document.getElementById('productList');
             productList.innerHTML = '';
 
-            products.forEach((product, index) => {
+            products.forEach((product) => {
                 const li = document.createElement('li');
                 li.className = 'product-item';
-                li.innerHTML = `
-                    <span>${product.name} - Себестоимость: ${product.cost}, Цена: ${product.price}</span>
-                    <button class="delete-btn" onclick="deleteProduct(${index})">Удалить</button>
-                `;
+                li.textContent = `${product.name} - Себестоимость: ${product.cost}, Цена: ${product.price}`;
                 productList.appendChild(li);
             });
         }
