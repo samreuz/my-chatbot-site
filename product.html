@@ -26,7 +26,7 @@
         .input-group {
             margin-bottom: 20px;
         }
-        .product-input {
+        .input-field {
             width: calc(100% - 20px);
             padding: 10px;
             border: 1px solid var(--tg-theme-hint-color, #999);
@@ -77,7 +77,9 @@
     <div class="container">
         <div class="header">Список продуктов</div>
         <div class="input-group">
-            <input type="text" class="product-input" id="productInput" placeholder="Название продукта">
+            <input type="text" class="input-field" id="productNameInput" placeholder="Название продукта">
+            <input type="number" class="input-field" id="productCostInput" placeholder="Себестоимость">
+            <input type="number" class="input-field" id="productPriceInput" placeholder="Цена">
             <button class="add-button" onclick="addProduct()">Добавить продукт</button>
         </div>
         <ul class="product-list" id="productList">
@@ -113,19 +115,33 @@
         }
 
         async function addProduct() {
-            const input = document.getElementById('productInput');
-            const productName = input.value.trim();
+            const nameInput = document.getElementById('productNameInput');
+            const costInput = document.getElementById('productCostInput');
+            const priceInput = document.getElementById('productPriceInput');
 
-            if (productName) {
-                products.push(productName);
+            const productName = nameInput.value.trim();
+            const productCost = costInput.value.trim();
+            const productPrice = priceInput.value.trim();
+
+            if (productName && productCost && productPrice) {
+                const newProduct = {
+                    name: productName,
+                    cost: productCost,
+                    price: productPrice
+                };
+
+                products.push(newProduct);
                 renderProducts();
-                input.value = '';
+
+                nameInput.value = '';
+                costInput.value = '';
+                priceInput.value = '';
 
                 // Отправляем только что добавленный объект в n8n
-                await sendToN8n(productName);
+                await sendToN8n(newProduct);
 
                 // Также отправляем в Telegram
-                tg.sendData(JSON.stringify({ product: productName }));
+                tg.sendData(JSON.stringify(newProduct));
 
                 // Показываем сообщение об успешном добавлении
                 const successMessage = document.getElementById('successMessage');
@@ -144,7 +160,7 @@
                 const li = document.createElement('li');
                 li.className = 'product-item';
                 li.innerHTML = `
-                    <span>${product}</span>
+                    <span>${product.name} - Себестоимость: ${product.cost}, Цена: ${product.price}</span>
                     <button class="delete-btn" onclick="deleteProduct(${index})">Удалить</button>
                 `;
                 productList.appendChild(li);
