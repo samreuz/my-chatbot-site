@@ -1,158 +1,164 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Всплывающий помощник</title>
+    <title>Список магазинов</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        .chatbot-window {
-            display: none;
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            width: 300px;
-            background-color: white;
-            border: 1px solid #ccc;
-            border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            font-family: Arial, sans-serif;
+        body {
+            background-color: var(--tg-theme-bg-color, #fff);
+            color: var(--tg-theme-text-color, #000);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            margin: 0;
+            padding: 16px;
         }
-
-        .chatbot-header {
-            background-color: #007bff;
-            color: white;
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .header {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            color: var(--tg-theme-text-color, #000);
+        }
+        .input-group {
+            margin-bottom: 20px;
+        }
+        .store-input {
+            width: calc(100% - 20px);
             padding: 10px;
-            border-top-left-radius: 10px;
-            border-top-right-radius: 10px;
+            border: 1px solid var(--tg-theme-hint-color, #999);
+            border-radius: 8px;
+            background: var(--tg-theme-bg-color, #fff);
+            color: var(--tg-theme-text-color, #000);
+            margin-bottom: 10px;
+        }
+        .add-button {
+            width: 100%;
+            padding: 12px;
+            background-color: var(--tg-theme-button-color, #2481cc);
+            color: var(--tg-theme-button-text-color, #fff);
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .store-list {
+            list-style: none;
+            padding: 0;
+        }
+        .store-item {
+            background: var(--tg-theme-secondary-bg-color, #f5f5f5);
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
-
-        .chatbot-body {
-            height: 300px;
-            overflow-y: scroll;
-            padding: 10px;
-        }
-
-        .chatbot-footer {
-            display: flex;
-            padding: 10px;
-            border-top: 1px solid #ccc;
-        }
-
-        #userInput {
-            flex: 1;
-            padding: 5px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-        }
-
-        #openChatbot {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background-color: #007bff;
-            color: white;
+        .delete-btn {
+            color: #ff3b30;
+            background: none;
             border: none;
-            padding: 10px 20px;
-            border-radius: 5px;
+            padding: 5px 10px;
             cursor: pointer;
-            font-family: Arial, sans-serif;
-        }
-
-        .message {
-            margin-bottom: 10px;
-            padding: 10px;
-            border-radius: 5px;
-        }
-
-        .user-message {
-            background-color: #f1f1f1;
-            text-align: right;
-        }
-
-        .bot-message {
-            background-color: #007bff;
-            color: white;
         }
     </style>
 </head>
 <body>
-
-    <div id="chatbot" class="chatbot-window">
-        <div class="chatbot-header">
-            <h4>Помощник</h4>
-            <button onclick="closeChatbot()">X</button>
+    <div class="container">
+        <div class="header">Список магазинов</div>
+        <div class="input-group">
+            <input type="text" class="store-input" id="storeInput" placeholder="Название магазина">
+            <button class="add-button" onclick="addStore()">Добавить магазин</button>
         </div>
-        <div class="chatbot-body" id="chat-content"></div>
-        <div class="chatbot-footer">
-            <input type="text" id="userInput" placeholder="Введите сообщение...">
-            <button onclick="sendMessage()">Отправить</button>
-        </div>
+        <ul class="store-list" id="storeList">
+            <!-- Магазины будут добавляться сюда -->
+        </ul>
     </div>
 
-    <button id="openChatbot" onclick="openChatbot()">Открыть помощника</button>
-
     <script>
-        function openChatbot() {
-            document.getElementById('chatbot').style.display = 'block';
-            document.getElementById('openChatbot').style.display = 'none';
+        let tg = window.Telegram.WebApp;
+        tg.expand();
+
+        let stores = [];
+        const N8N_WEBHOOK_URL = 'https://n8n.autodom.uz/webhook-test/stores'; // Замените на URL вашего webhook в n8n
+
+        async function sendToN8n(data) {
+            try {
+                const response = await fetch(N8N_WEBHOOK_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        stores: data,
+                        userId: tg.initDataUnsafe.user.id,
+                        username: tg.initDataUnsafe.user.username
+                    })
+                });
+                return await response.json();
+            } catch (error) {
+                console.error('Error sending data to n8n:', error);
+            }
         }
 
-        function closeChatbot() {
-            document.getElementById('chatbot').style.display = 'none';
-            document.getElementById('openChatbot').style.display = 'block';
+        async function addStore() {
+            const input = document.getElementById('storeInput');
+            const storeName = input.value.trim();
+            
+            if (storeName) {
+                stores.push(storeName);
+                renderStores();
+                input.value = '';
+                
+                // Отправляем данные в n8n
+                await sendToN8n(stores);
+                
+                // Также отправляем в Telegram
+                tg.sendData(JSON.stringify(stores));
+            }
         }
 
-        function sendMessage() {
-            const userInput = document.getElementById('userInput').value;
-            const chatContent = document.getElementById('chat-content');
+        async function deleteStore(index) {
+            stores.splice(index, 1);
+            renderStores();
+            
+            // Отправляем обновленный список в n8n
+            await sendToN8n(stores);
+            
+            // И в Telegram
+            tg.sendData(JSON.stringify(stores));
+        }
 
-            // Добавляем сообщение пользователя в чат
-            const userMessage = document.createElement('div');
-            userMessage.textContent = userInput;
-            userMessage.className = 'message user-message';
-            chatContent.appendChild(userMessage);
-
-            // Отправляем сообщение в n8n через вебхук
-            fetch('https://n8n.autodom.keenetic.pro/webhook/14ed986e-af8b-4933-9bcf-bfb7524b12f0', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ message: userInput })
-            })
-            .then(response => {
-                console.log('HTTP статус:', response.status);
-                return response.json();
-            })
-            .then(data => {
-                console.log('Ответ от n8n:', data);
-                if (Array.isArray(data) && data.length > 0) {
-                    const botMessage = document.createElement('div');
-                    botMessage.textContent = data[0].response;  // Извлекаем ответ из первого элемента массива
-                    botMessage.className = 'message bot-message';
-                    chatContent.appendChild(botMessage);
-                } else {
-                    const errorMessage = document.createElement('div');
-                    errorMessage.textContent = 'Ошибка: неверный формат ответа';
-                    errorMessage.className = 'message bot-message';
-                    chatContent.appendChild(errorMessage);
-                    console.error('Неверный формат ответа:', data);
-                }
-            })
-            .catch(error => {
-                const errorMessage = document.createElement('div');
-                errorMessage.textContent = 'Ошибка связи с сервером';
-                errorMessage.className = 'message bot-message';
-                chatContent.appendChild(errorMessage);
-                console.error('Ошибка:', error);
+        function renderStores() {
+            const storeList = document.getElementById('storeList');
+            storeList.innerHTML = '';
+            
+            stores.forEach((store, index) => {
+                const li = document.createElement('li');
+                li.className = 'store-item';
+                li.innerHTML = `
+                    <span>${store}</span>
+                    <button class="delete-btn" onclick="deleteStore(${index})">Удалить</button>
+                `;
+                storeList.appendChild(li);
             });
-            // Очищаем поле ввода
-            document.getElementById('userInput').value = '';
         }
-    </script>
 
+        // Инициализация Telegram WebApp
+        tg.ready();
+
+        // Загружаем существующие магазины при старте
+        fetch(N8N_WEBHOOK_URL + '/stores')
+            .then(response => response.json())
+            .then(data => {
+                stores = data.stores || [];
+                renderStores();
+            })
+            .catch(console.error);
+    </script>
 </body>
 </html>
