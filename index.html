@@ -65,6 +65,12 @@
             padding: 5px 10px;
             cursor: pointer;
         }
+        .success-message {
+            color: green;
+            text-align: center;
+            margin-top: 20px;
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -77,6 +83,7 @@
         <ul class="store-list" id="storeList">
             <!-- Магазины будут добавляться сюда -->
         </ul>
+        <div class="success-message" id="successMessage">Добавлено!</div>
     </div>
 
     <script>
@@ -94,7 +101,7 @@
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
-                        stores: data,
+                        store: data, // Отправляем только один объект
                         userId: tg.initDataUnsafe.user.id,
                         username: tg.initDataUnsafe.user.username
                     })
@@ -108,35 +115,31 @@
         async function addStore() {
             const input = document.getElementById('storeInput');
             const storeName = input.value.trim();
-            
+
             if (storeName) {
                 stores.push(storeName);
                 renderStores();
                 input.value = '';
-                
-                // Отправляем данные в n8n
-                await sendToN8n(stores);
-                
-                // Также отправляем в Telegram
-                tg.sendData(JSON.stringify(stores));
-            }
-        }
 
-        async function deleteStore(index) {
-            stores.splice(index, 1);
-            renderStores();
-            
-            // Отправляем обновленный список в n8n
-            await sendToN8n(stores);
-            
-            // И в Telegram
-            tg.sendData(JSON.stringify(stores));
+                // Отправляем только что добавленный объект в n8n
+                await sendToN8n(storeName);
+
+                // Также отправляем в Telegram
+                tg.sendData(JSON.stringify({ store: storeName }));
+
+                // Показываем сообщение об успешном добавлении
+                const successMessage = document.getElementById('successMessage');
+                successMessage.style.display = 'block';
+                setTimeout(() => {
+                    successMessage.style.display = 'none';
+                }, 2000); // Сообщение исчезает через 2 секунды
+            }
         }
 
         function renderStores() {
             const storeList = document.getElementById('storeList');
             storeList.innerHTML = '';
-            
+
             stores.forEach((store, index) => {
                 const li = document.createElement('li');
                 li.className = 'store-item';
