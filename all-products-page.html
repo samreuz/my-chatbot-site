@@ -33,7 +33,7 @@
             color: var(--tg-theme-text-color, #000);
             font-size: 16px;
         }
-        .products-list {
+        .products-list, .return-list {
             list-style: none;
             padding: 0;
         }
@@ -103,7 +103,11 @@
         <ul id="productsList" class="products-list">
             <!-- Товары будут добавляться сюда -->
         </ul>
-        <button class="submit-button" onclick="submitOrder()">Отправить</button>
+        <div class="header">Возврат</div>
+        <ul id="returnList" class="return-list">
+            <!-- Товары для возврата будут добавляться сюда -->
+        </ul>
+        <button class="submit-button" onclick="submitOrder()">Отправить заказ</button>
     </div>
     <script>
         const tg = window.Telegram.WebApp;
@@ -139,6 +143,7 @@
 
                 const products = productsData.items;
                 renderProducts(products);
+                renderReturnProducts(products);
 
             } catch (error) {
                 console.error('Error loading data:', error);
@@ -156,7 +161,7 @@
                     <span class="product-name">${product.products}</span>
                     <input type="number"
                            class="quantity-input"
-                           value="0"
+                           value=""
                            min="0"
                            data-product-id="${product.product_id}"
                            onchange="validateQuantity(this)">
@@ -165,9 +170,28 @@
             });
         }
 
+        function renderReturnProducts(products) {
+            const returnList = document.getElementById('returnList');
+            returnList.innerHTML = '';
+            products.forEach(product => {
+                const li = document.createElement('li');
+                li.className = 'product-item';
+                li.innerHTML = `
+                    <span class="product-name">${product.products}</span>
+                    <input type="number"
+                           class="quantity-input"
+                           value=""
+                           min="0"
+                           data-product-id="${product.product_id}"
+                           onchange="validateQuantity(this)">
+                `;
+                returnList.appendChild(li);
+            });
+        }
+
         function validateQuantity(input) {
             const value = parseInt(input.value);
-            if (value < 0) input.value = 0;
+            if (value < 0) input.value = '';
         }
 
         async function submitOrder() {
@@ -178,9 +202,10 @@
             }
             const order = {
                 storeId: storeId,
-                products: []
+                products: [],
+                returns: []
             };
-            document.querySelectorAll('.quantity-input').forEach(input => {
+            document.querySelectorAll('#productsList .quantity-input').forEach(input => {
                 const quantity = parseInt(input.value);
                 if (quantity > 0) {
                     order.products.push({
@@ -189,8 +214,17 @@
                     });
                 }
             });
-            if (order.products.length === 0) {
-                alert('Пожалуйста, выберите хотя бы один товар');
+            document.querySelectorAll('#returnList .quantity-input').forEach(input => {
+                const quantity = parseInt(input.value);
+                if (quantity > 0) {
+                    order.returns.push({
+                        productId: input.dataset.productId,
+                        quantity: quantity
+                    });
+                }
+            });
+            if (order.products.length === 0 && order.returns.length === 0) {
+                alert('Пожалуйста, выберите хотя бы один товар или возврат');
                 return;
             }
             try {
