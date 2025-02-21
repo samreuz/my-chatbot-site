@@ -94,27 +94,29 @@
                 }
                 const storesData = await storesResponse.json();
                 console.log('Полученные данные магазинов:', storesData);
-        
+
                 const storeSelect = document.getElementById('storeSelect');
                 storeSelect.innerHTML = '<option value="">Выберите магазин</option>';
                 const storesArray = storesData.stores.split(',').map(store => store.trim());
-                
+
                 storesArray.forEach(store => {
                     const option = document.createElement('option');
                     option.value = store;
                     option.textContent = store;
                     storeSelect.appendChild(option);
                 });
-        
+
                 const productsResponse = await fetch(`${N8N_API_URL}/products`);
                 if (!productsResponse.ok) {
                     throw new Error(`HTTP error! Status: ${productsResponse.status}`);
                 }
                 const productsData = await productsResponse.json();
                 console.log('Полученные данные товаров:', productsData);
-        
-                renderProducts(productsData);
-                
+
+                // Парсим данные, если они приходят в виде строки JSON
+                const products = JSON.parse(productsData.items);
+                renderProducts(products);
+
             } catch (error) {
                 console.error('Error loading data:', error);
             }
@@ -127,7 +129,7 @@
                 const li = document.createElement('li');
                 li.className = 'product-item';
                 li.innerHTML = `
-                    <span class="product-name">${product.name}</span>
+                    <span class="product-name">${product.products}</span>
                     <input type="number"
                            class="quantity-input"
                            value="0"
