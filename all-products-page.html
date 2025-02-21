@@ -125,6 +125,7 @@
             const productsList = document.getElementById('productsList');
             productsList.innerHTML = '';
             products.forEach(product => {
+                console.log('Rendering product:', product); // Проверьте, что product содержит ожидаемые данные
                 const li = document.createElement('li');
                 li.className = 'product-item';
                 li.innerHTML = `
@@ -133,7 +134,7 @@
                            class="quantity-input"
                            value="0"
                            min="0"
-                           data-product-id="${product.id}"
+                           data-product-id="${product.product_id}"
                            onchange="validateQuantity(this)">
                 `;
                 productsList.appendChild(li);
