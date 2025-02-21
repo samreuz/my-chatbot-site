@@ -113,7 +113,6 @@
                 const productsData = await productsResponse.json();
                 console.log('Полученные данные товаров:', productsData);
 
-                // Убедитесь, что данные уже являются объектом
                 const products = productsData.items;
                 renderProducts(products);
 
@@ -170,13 +169,16 @@
                 return;
             }
             try {
-                await fetch(`${N8N_API_URL}/order`, {
+                const response = await fetch(`${N8N_API_URL}/order`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify(order)
                 });
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
                 tg.sendData(JSON.stringify(order));
                 tg.close();
             } catch (error) {
