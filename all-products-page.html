@@ -73,72 +73,63 @@
 <body>
     <div class="container">
         <div class="header">Выбор товаров</div>
-        
         <select id="storeSelect" class="store-select">
             <option value="">Выберите магазин</option>
         </select>
-
         <ul id="productsList" class="products-list">
             <!-- Товары будут добавляться сюда -->
         </ul>
-
         <button class="submit-button" onclick="submitOrder()">Отправить заказ</button>
     </div>
-
     <script>
-        let tg = window.Telegram.WebApp;
+        const tg = window.Telegram.WebApp;
         tg.expand();
-
         const N8N_API_URL = 'https://n8n.autodom.uz/webhook'; // URL вашего webhook в n8n
-        let stores = [];
-        let products = [];
 
-        // Загрузка магазинов и всех товаров
         async function loadData() {
             try {
+                const storeSelect = document.getElementById('storeSelect');
+
                 const storesResponse = await fetch(`${N8N_API_URL}/stores`);
-                
                 if (!storesResponse.ok) {
                     throw new Error(`HTTP error! Status: ${storesResponse.status}`);
                 }
-        
                 const storesData = await storesResponse.json();
-        
-                // Отладочный вывод
                 console.log('Полученные данные магазинов:', storesData);
-        
-                // Аналогичную проверку добавьте для продукта
-                const productsResponse = await fetch(`${N8N_API_URL}/products`);
                 
+                storeSelect.innerHTML = '<option value="">Выберите магазин</option>';
+                storesData.stores.forEach(store => {
+                    const option = document.createElement('option');
+                    option.value = store;
+                    option.textContent = store;
+                    storeSelect.appendChild(option);
+                });
+
+                const productsResponse = await fetch(`${N8N_API_URL}/products`);
                 if (!productsResponse.ok) {
                     throw new Error(`HTTP error! Status: ${productsResponse.status}`);
                 }
-        
                 const productsData = await productsResponse.json();
-                
-                // Отладочный вывод
                 console.log('Полученные данные товаров:', productsData);
-        
-                renderProducts();
+
+                renderProducts(productsData);
+
             } catch (error) {
                 console.error('Error loading data:', error);
             }
         }
 
-
-        // Отображение списка всех товаров
-        function renderProducts() {
+        function renderProducts(products) {
             const productsList = document.getElementById('productsList');
             productsList.innerHTML = '';
-            
             products.forEach(product => {
                 const li = document.createElement('li');
                 li.className = 'product-item';
                 li.innerHTML = `
                     <span class="product-name">${product.name}</span>
-                    <input type="number" 
-                           class="quantity-input" 
-                           value="0" 
+                    <input type="number"
+                           class="quantity-input"
+                           value="0"
                            min="0"
                            data-product-id="${product.id}"
                            onchange="validateQuantity(this)">
@@ -147,26 +138,21 @@
             });
         }
 
-        // Проверка введенного количества
         function validateQuantity(input) {
             const value = parseInt(input.value);
             if (value < 0) input.value = 0;
         }
 
-        // Отправка заказа
         async function submitOrder() {
             const storeId = document.getElementById('storeSelect').value;
             if (!storeId) {
                 alert('Пожалуйста, выберите магазин');
                 return;
             }
-
             const order = {
                 storeId: storeId,
                 products: []
             };
-
-            // Собираем данные о количестве товаров
             document.querySelectorAll('.quantity-input').forEach(input => {
                 const quantity = parseInt(input.value);
                 if (quantity > 0) {
@@ -176,14 +162,11 @@
                     });
                 }
             });
-
             if (order.products.length === 0) {
                 alert('Пожалуйста, выберите хотя бы один товар');
                 return;
             }
-
             try {
-                // Отправляем данные в n8n
                 await fetch(`${N8N_API_URL}/order`, {
                     method: 'POST',
                     headers: {
@@ -191,11 +174,7 @@
                     },
                     body: JSON.stringify(order)
                 });
-
-                // Отправляем данные в Telegram
                 tg.sendData(JSON.stringify(order));
-                
-                // Закрываем WebApp
                 tg.close();
             } catch (error) {
                 console.error('Error submitting order:', error);
@@ -203,7 +182,6 @@
             }
         }
 
-        // Инициализация при загрузке страницы
         tg.ready();
         loadData();
     </script>
