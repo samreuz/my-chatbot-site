@@ -68,10 +68,34 @@
             font-size: 16px;
             margin-top: 20px;
         }
+        .action-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        .action-button {
+            padding: 12px;
+            background-color: var(--tg-theme-button-color, #2481cc);
+            color: var(--tg-theme-button-text-color, #fff);
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            text-align: center;
+            flex: 1;
+            margin-right: 10px;
+        }
+        .action-button:last-child {
+            margin-right: 0;
+        }
     </style>
 </head>
 <body>
     <div class="container">
+        <div class="action-buttons">
+            <a href="https://samreuz.github.io/my-chatbot-site/store.html" class="action-button">Добавить Магазин</a>
+            <a href="https://samreuz.github.io/my-chatbot-site/product.html" class="action-button">Добавить Товар</a>
+        </div>
         <div class="header">Выбор товаров</div>
         <select id="storeSelect" class="store-select">
             <option value="">Выберите магазин</option>
