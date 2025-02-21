@@ -95,7 +95,6 @@
                 const storesData = await storesResponse.json();
                 console.log('Полученные данные магазинов:', storesData);
         
-                // Разберите строку в массив
                 const storeSelect = document.getElementById('storeSelect');
                 storeSelect.innerHTML = '<option value="">Выберите магазин</option>';
                 const storesArray = storesData.stores.split(',').map(store => store.trim());
@@ -107,20 +106,19 @@
                     storeSelect.appendChild(option);
                 });
         
-            try {
-                    const productsResponse = await fetch(`${N8N_API_URL}/products`);
-                    if (!productsResponse.ok) {
-                        throw new Error(`HTTP error! Status: ${productsResponse.status}`);
-                    }
-                    const productsData = await productsResponse.json();
-                    console.log('Полученные данные товаров:', productsData);
-            
-                    renderProducts(productsData);
-                    
-                } catch (error) {
-                    console.error('Error loading data:', error);
+                const productsResponse = await fetch(`${N8N_API_URL}/products`);
+                if (!productsResponse.ok) {
+                    throw new Error(`HTTP error! Status: ${productsResponse.status}`);
                 }
+                const productsData = await productsResponse.json();
+                console.log('Полученные данные товаров:', productsData);
+        
+                renderProducts(productsData);
+                
+            } catch (error) {
+                console.error('Error loading data:', error);
             }
+        }
 
         function renderProducts(products) {
             const productsList = document.getElementById('productsList');
