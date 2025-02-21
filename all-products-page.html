@@ -107,19 +107,20 @@
                     storeSelect.appendChild(option);
                 });
         
-                const productsResponse = await fetch(`${N8N_API_URL}/products`);
-                if (!productsResponse.ok) {
-                    throw new Error(`HTTP error! Status: ${productsResponse.status}`);
+            try {
+                    const productsResponse = await fetch(`${N8N_API_URL}/products`);
+                    if (!productsResponse.ok) {
+                        throw new Error(`HTTP error! Status: ${productsResponse.status}`);
+                    }
+                    const productsData = await productsResponse.json();
+                    console.log('Полученные данные товаров:', productsData);
+            
+                    renderProducts(productsData);
+                    
+                } catch (error) {
+                    console.error('Error loading data:', error);
                 }
-                const productsData = await productsResponse.json();
-                console.log('Полученные данные товаров:', productsData);
-        
-                renderProducts(productsData);
-                
-            } catch (error) {
-                console.error('Error loading data:', error);
             }
-        }
 
         function renderProducts(products) {
             const productsList = document.getElementById('productsList');
