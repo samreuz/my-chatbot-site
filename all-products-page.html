@@ -96,46 +96,32 @@
         // Загрузка магазинов и всех товаров
         async function loadData() {
             try {
-                // Загружаем магазины
                 const storesResponse = await fetch(`${N8N_API_URL}/stores`);
-                const storesData = await storesResponse.json();
                 
+                if (!storesResponse.ok) {
+                    throw new Error(`HTTP error! Status: ${storesResponse.status}`);
+                }
+        
+                const storesData = await storesResponse.json();
+        
                 // Отладочный вывод
                 console.log('Полученные данные магазинов:', storesData);
-                
-                // Проверяем формат данных и преобразуем их если нужно
-                stores = Array.isArray(storesData) ? storesData : 
-                         storesData.data ? storesData.data :
-                         storesData.stores ? storesData.stores : [];
-                
-                const storeSelect = document.getElementById('storeSelect');
-                stores.forEach(store => {
-                    const option = document.createElement('option');
-                    option.value = store.id || store._id || '';
-                    option.textContent = store.name || store.title || 'Без названия';
-                    storeSelect.appendChild(option);
-                });
         
-                // Загружаем все товары
+                // Аналогичную проверку добавьте для продукта
                 const productsResponse = await fetch(`${N8N_API_URL}/products`);
+                
+                if (!productsResponse.ok) {
+                    throw new Error(`HTTP error! Status: ${productsResponse.status}`);
+                }
+        
                 const productsData = await productsResponse.json();
                 
                 // Отладочный вывод
                 console.log('Полученные данные товаров:', productsData);
-                
-                // Проверяем формат данных и преобразуем их если нужно
-                products = Array.isArray(productsData) ? productsData :
-                           productsData.data ? productsData.data :
-                           productsData.products ? productsData.products : [];
-                           
+        
                 renderProducts();
             } catch (error) {
                 console.error('Error loading data:', error);
-                // Показываем более подробную информацию об ошибке
-                console.error('Error details:', {
-                    message: error.message,
-                    stack: error.stack
-                });
             }
         }
 
