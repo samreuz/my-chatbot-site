@@ -113,8 +113,8 @@
                 const productsData = await productsResponse.json();
                 console.log('Полученные данные товаров:', productsData);
 
-                // Парсим данные, если они приходят в виде строки JSON
-                const products = JSON.parse(productsData.items);
+                // Убедитесь, что данные уже являются объектом
+                const products = productsData.items;
                 renderProducts(products);
 
             } catch (error) {
